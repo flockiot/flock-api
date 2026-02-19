@@ -64,7 +64,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := fn(ctx); err != nil {
+			if err := fn(ctx, cfg); err != nil {
 				slog.Error("target failed", "target", name, "error", err)
 			}
 		}()

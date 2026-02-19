@@ -67,8 +67,8 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Log.Level != "info" {
 		t.Errorf("Log.Level = %q, want %q", cfg.Log.Level, "info")
 	}
-	if cfg.Log.Format != "text" {
-		t.Errorf("Log.Format = %q, want %q", cfg.Log.Format, "text")
+	if cfg.Log.Format != "json" {
+		t.Errorf("Log.Format = %q, want %q", cfg.Log.Format, "json")
 	}
 }
 

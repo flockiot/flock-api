@@ -66,7 +66,7 @@ type ZitadelConfig struct {
 
 type LogConfig struct {
 	Level  string `env:"LEVEL"  envDefault:"info"`
-	Format string `env:"FORMAT" envDefault:"text"`
+	Format string `env:"FORMAT" envDefault:"json"`
 }
 
 func Load() (*Config, error) {

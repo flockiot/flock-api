@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+
+	"github.com/flockiot/flock-api/config"
 )
 
-type StartFunc func(ctx context.Context) error
+type StartFunc func(ctx context.Context, cfg *config.Config) error
 
 type Registry struct {
 	targets map[string]StartFunc
