@@ -6,14 +6,30 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 
+	"github.com/flockiot/flock-api/config"
 	"github.com/flockiot/flock-api/target"
 )
 
 func main() {
 	targetFlag := flag.String("target", "", "comma-separated list of targets to run, or 'all'")
 	flag.Parse()
+
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
+		os.Exit(1)
+	}
+	slog.Info("config loaded",
+		"server_host", cfg.Server.Host,
+		"server_port", cfg.Server.Port,
+		"server_grpc_port", cfg.Server.GRPCPort,
+		"log_level", cfg.Log.Level,
+		"log_format", cfg.Log.Format,
+	)
 
 	targetValue := *targetFlag
 	if targetValue == "" {
@@ -32,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	slog.Info("flock-api starting", "targets", targetValue)
