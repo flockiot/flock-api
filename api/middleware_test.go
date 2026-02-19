@@ -15,7 +15,7 @@ func TestRequestLoggerLogsFields(t *testing.T) {
 
 	handler := requestLogger(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("hello"))
+		_, _ = w.Write([]byte("hello"))
 	}))
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -43,7 +43,7 @@ func TestResponseWriterCapturesStatus(t *testing.T) {
 func TestResponseWriterCapturesBytes(t *testing.T) {
 	w := httptest.NewRecorder()
 	ww := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-	ww.Write([]byte("hello"))
+	_, _ = ww.Write([]byte("hello"))
 
 	if ww.bytes != 5 {
 		t.Fatalf("expected 5 bytes, got %d", ww.bytes)

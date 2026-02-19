@@ -29,7 +29,9 @@ func Start(ctx context.Context, cfg *config.Config) error {
 	go func() {
 		<-ctx.Done()
 		slog.Info("api server shutting down")
-		srv.Shutdown(context.Background())
+		if err := srv.Shutdown(context.Background()); err != nil {
+			slog.Error("server shutdown error", "error", err)
+		}
 	}()
 
 	slog.Info("api server listening", "addr", addr)
@@ -54,10 +56,10 @@ func NewRouter() chi.Router {
 
 func handleLivez(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
+	_, _ = w.Write([]byte("ok"))
 }
 
 func handleReadyz(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
+	_, _ = w.Write([]byte("ok"))
 }
