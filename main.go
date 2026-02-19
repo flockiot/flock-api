@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/flockiot/flock-api/config"
+	"github.com/flockiot/flock-api/logging"
 	"github.com/flockiot/flock-api/target"
 )
 
@@ -23,10 +24,15 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error loading config: %v\n", err)
 		os.Exit(1)
 	}
-	slog.Info("config loaded",
+
+	if err := logging.Setup(cfg.Log.Level, cfg.Log.Format, os.Stdout); err != nil {
+		fmt.Fprintf(os.Stderr, "error setting up logging: %v\n", err)
+		os.Exit(1)
+	}
+
+	slog.Info("flock-api configured",
 		"server_host", cfg.Server.Host,
 		"server_port", cfg.Server.Port,
-		"server_grpc_port", cfg.Server.GRPCPort,
 		"log_level", cfg.Log.Level,
 		"log_format", cfg.Log.Format,
 	)
