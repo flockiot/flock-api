@@ -50,3 +50,17 @@ Delegated to Zitadel (self-hosted). API validates JWTs but never issues them for
 - No stubs or scaffolding unless explicitly asked
 - Prefer explicit and readable over clever
 - Work in small, verifiable increments
+
+## Code Style
+
+- Do NOT write comments that explain what the code does — the code should speak for itself
+- Only write comments when explaining **why** something non-obvious is done, or linking to an issue/spec
+- No redundant/repetitive comments
+
+## Git Workflow
+
+- Each task gets its own branch off `main`
+- Use **conventional commits**: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `ci:`
+- Commit message must reference the GitHub issue: `Closes #N`
+- One commit per PR, squash if needed
+- Open PR with `gh pr create` and add `--reviewer SyntaxSmith106`
