@@ -1,0 +1,6 @@
+flock-api
+*.exe
+*.test
+*.out
+/vendor/
+.env
