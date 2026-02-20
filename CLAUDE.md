@@ -20,25 +20,20 @@ go test ./...
 Single Go binary with these targets (each runs as a separate Kubernetes Deployment in production, or all together with `--target=all`):
 
 - **api** — User-facing REST API (auth, CRUD, SSE, WebSocket)
-- **ingester** — MQTT connections from devices, writes state/telemetry, publishes to Kafka
-- **scheduler** — Rollout execution engine, consumes Kafka events, drives deployments
+- **ingester** — Subscribes to device MQTT topics, writes state/telemetry, publishes internal events
+- **scheduler** — Rollout execution engine, subscribes to internal MQTT topics, drives deployments
 - **builder** — Multi-arch container image builds
 - **delta** — Binary delta patches between OCI image layers
 - **registry-proxy** — Proxy in front of Harbor for delta serving
 - **tunnel** — WireGuard overlay network for device SSH and reverse tunnels
 - **proxy** — Public device URL routing (`<uuid>.devices.flock.io`)
-- **events-gateway** — Customer-facing event streaming (webhooks, WebSocket, Kafka forwarding)
+- **events-gateway** — Customer-facing event streaming (webhooks, WebSocket)
 
-## Data Stores
+## Data Stores (added as needed per build phase)
 
 - **PostgreSQL** — Relational data (orgs, users, fleets, devices, releases, deployments, rollouts)
-- **KV store** — Live device state (interface-based: Redis/Valkey first, ScyllaDB/DynamoDB later)
-- **ClickHouse** — Time-series telemetry, container logs, connectivity events
-- **Loki** — Audit logs
-- **Harbor** — OCI image registry
-- **S3-compatible** — Delta patches, build logs, OS image artifacts
-- **Kafka** — Internal message bus + customer event system
-- **Apicurio Schema Registry** — Kafka schema enforcement
+- **Valkey** — Live device state (pluggable KV store interface, added later)
+- **MQTT broker (EMQX)** — Central message bus for device and internal async communication (added later)
 
 ## Auth
 
