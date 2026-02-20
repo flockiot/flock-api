@@ -26,6 +26,7 @@ func main() {
 	version.Value = strings.TrimSpace(embeddedVersion)
 
 	targetFlag := flag.String("target", "", "comma-separated list of targets to run, or 'all'")
+	migrateOnly := flag.Bool("migrate-only", false, "run database migrations and exit")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -46,6 +47,28 @@ func main() {
 		"log_format", cfg.Log.Format,
 	)
 
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	pool, err := database.Connect(ctx, cfg.Postgres.DSN)
+	if err != nil {
+		slog.Error("failed to connect to database", "error", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+	slog.Info("database connected")
+
+	slog.Info("running database migrations")
+	if err := database.Migrate(cfg.Postgres.DSN); err != nil {
+		slog.Error("failed to run migrations", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("database migrations complete")
+
+	if *migrateOnly {
+		return
+	}
+
 	targetValue := *targetFlag
 	if targetValue == "" {
 		targetValue = os.Getenv("FLOCK_TARGET")
@@ -62,17 +85,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
-
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-
-	pool, err := database.Connect(ctx, cfg.Postgres.DSN)
-	if err != nil {
-		slog.Error("failed to connect to database", "error", err)
-		os.Exit(1)
-	}
-	defer pool.Close()
-	slog.Info("database connected")
 
 	deps := &target.Deps{
 		Config: cfg,
