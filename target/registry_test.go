@@ -3,11 +3,9 @@ package target
 import (
 	"context"
 	"testing"
-
-	"github.com/flockiot/flock-api/config"
 )
 
-func noop(_ context.Context, _ *config.Config) error { return nil }
+func noop(_ context.Context, _ *Deps) error { return nil }
 
 func newTestRegistry() *Registry {
 	r := New()

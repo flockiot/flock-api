@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,12 +11,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/flockiot/flock-api/config"
+	"github.com/flockiot/flock-api/version"
 )
 
-func Start(ctx context.Context, cfg *config.Config) error {
-	r := NewRouter()
+func Start(ctx context.Context, cfg *config.Config, pool *pgxpool.Pool) error {
+	r := NewRouter(pool)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
@@ -41,7 +44,7 @@ func Start(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
-func NewRouter() chi.Router {
+func NewRouter(pool *pgxpool.Pool) chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -49,7 +52,7 @@ func NewRouter() chi.Router {
 	r.Use(requestLogger)
 
 	r.Get("/livez", handleLivez)
-	r.Get("/readyz", handleReadyz)
+	r.Get("/readyz", handleReadyz(pool))
 
 	return r
 }
@@ -59,7 +62,34 @@ func handleLivez(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
-func handleReadyz(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("ok"))
+func handleReadyz(pool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		resp := readyzResponse{Version: version.Get()}
+
+		if pool == nil {
+			resp.Status = "database not configured"
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+		if err := pool.Ping(r.Context()); err != nil {
+			slog.Error("readyz check failed", "error", err)
+			resp.Status = "database unreachable"
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+
+		resp.Status = "ok"
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(resp)
+	}
+}
+
+type readyzResponse struct {
+	Status  string `json:"status"`
+	Version string `json:"version"`
 }

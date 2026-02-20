@@ -2,20 +2,29 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
 	"github.com/flockiot/flock-api/config"
+	"github.com/flockiot/flock-api/database"
 	"github.com/flockiot/flock-api/logging"
 	"github.com/flockiot/flock-api/target"
+	"github.com/flockiot/flock-api/version"
 )
 
+//go:embed VERSION
+var embeddedVersion string
+
 func main() {
+	version.Value = strings.TrimSpace(embeddedVersion)
+
 	targetFlag := flag.String("target", "", "comma-separated list of targets to run, or 'all'")
 	flag.Parse()
 
@@ -57,6 +66,19 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
+	pool, err := database.Connect(ctx, cfg.Postgres.DSN)
+	if err != nil {
+		slog.Error("failed to connect to database", "error", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+	slog.Info("database connected")
+
+	deps := &target.Deps{
+		Config: cfg,
+		DB:     pool,
+	}
+
 	slog.Info("flock-api starting", "targets", targetValue)
 
 	var wg sync.WaitGroup
@@ -64,7 +86,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := fn(ctx, cfg); err != nil {
+			if err := fn(ctx, deps); err != nil {
 				slog.Error("target failed", "target", name, "error", err)
 			}
 		}()

@@ -6,10 +6,17 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/flockiot/flock-api/config"
 )
 
-type StartFunc func(ctx context.Context, cfg *config.Config) error
+type Deps struct {
+	Config *config.Config
+	DB     *pgxpool.Pool
+}
+
+type StartFunc func(ctx context.Context, deps *Deps) error
 
 type Registry struct {
 	targets map[string]StartFunc

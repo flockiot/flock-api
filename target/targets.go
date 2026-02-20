@@ -5,12 +5,11 @@ import (
 	"log/slog"
 
 	"github.com/flockiot/flock-api/api"
-	"github.com/flockiot/flock-api/config"
 )
 
 func DefaultRegistry() *Registry {
 	r := New()
-	r.Register("api", api.Start)
+	r.Register("api", apiStart)
 	r.Register("ingester", placeholder("ingester"))
 	r.Register("scheduler", placeholder("scheduler"))
 	r.Register("builder", placeholder("builder"))
@@ -22,8 +21,12 @@ func DefaultRegistry() *Registry {
 	return r
 }
 
+func apiStart(ctx context.Context, deps *Deps) error {
+	return api.Start(ctx, deps.Config, deps.DB)
+}
+
 func placeholder(name string) StartFunc {
-	return func(ctx context.Context, _ *config.Config) error {
+	return func(ctx context.Context, _ *Deps) error {
 		slog.Info("target started", "target", name)
 		<-ctx.Done()
 		return nil
